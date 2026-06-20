@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ky">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Node.js Үйрөнүү - Бэкэнд Технологиясы</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #339933; --secondary: #68a063; --dark: #1a1a2e;
+            --light: #f0f4f0; --white: #ffffff; --text: #333333;
+            --success: #27ae60; --warning: #f39c12; --danger: #e74c3c;
+            --code-bg: #1e1e2e; --accent: #8cc84b;
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6; color: var(--text); overflow-x: hidden; background: var(--light);
+        }
+        .navbar {
+            position: fixed; top: 0; width: 100%; background: var(--dark);
+            z-index: 1000; padding: 0.8rem 0; box-shadow: 0 2px 20px rgba(0,0,0,0.2);
+        }
+        .nav-container {
+            max-width: 1200px; margin: 0 auto; padding: 0 2rem;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .logo {
+            font-size: 1.6rem; font-weight: bold; color: var(--white); text-decoration: none;
+            display: flex; align-items: center; gap: 0.5rem; cursor: pointer;
+        }
+        .logo i { color: var(--accent); font-size: 1.8rem; }
+        .nav-links { display: flex; list-style: none; gap: 1.5rem; }
+        .nav-links a {
+            color: var(--white); text-decoration: none; font-weight: 500; font-size: 0.95rem;
+            padding: 0.4rem 0.8rem; border-radius: 20px; transition: all 0.3s; cursor: pointer;
+        }
+        .nav-links a:hover, .nav-links a.active { background: var(--accent); color: var(--dark); }
+        .mobile-menu { display: none; color: var(--white); font-size: 1.5rem; cursor: pointer; }
+        .hero {
+            min-height: 100vh; background: linear-gradient(135deg, var(--dark) 0%, #16213e 100%);
+            display: flex; align-items: center; justify-content: center; text-align: center;
+            color: var(--white); padding: 6rem 2rem 3rem; position: relative; overflow: hidden;
+        }
+        .hero::before {
+            content: 'require("http")'; position: absolute; top: 15%; left: 5%;
+            font-size: 2.5rem; opacity: 0.05; font-family: monospace; color: var(--accent);
+        }
+        .hero::after {
+            content: 'module.exports'; position: absolute; bottom: 15%; right: 5%;
+            font-size: 2.5rem; opacity: 0.05; font-family: monospace; color: var(--accent);
+        }
+        .hero-badge {
+            display: inline-block; background: rgba(140, 200, 75, 0.2); color: var(--accent);
+            padding: 0.4rem 1.2rem; border-radius: 20px; font-size: 0.9rem; margin-bottom: 1.5rem;
+            border: 1px solid rgba(140, 200, 75, 0.3); animation: fadeInUp 1s ease;
+        }
+        .hero-content h1 { font-size: 3.2rem; margin-bottom: 1rem; animation: fadeInUp 1s ease 0.2s both; }
+        .hero-content h1 span { color: var(--accent); }
+        .hero-content p { font-size: 1.2rem; margin-bottom: 2rem; opacity: 0.9; animation: fadeInUp 1s ease 0.4s both; }
+        .hero-buttons { animation: fadeInUp 1s ease 0.6s both; }
+        .btn {
+            display: inline-block; padding: 1rem 2.5rem; background: var(--accent); color: var(--dark);
+            text-decoration: none; border-radius: 50px; font-weight: 600; transition: all 0.3s;
+            border: none; cursor: pointer; font-size: 1rem;
+        }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(140,200,75,0.3); }
+        .btn-outline {
+            background: transparent; border: 2px solid var(--accent); color: var(--accent); margin-left: 1rem;
+        }
+        .btn-outline:hover { background: var(--accent); color: var(--dark); }
+        .btn-secondary { background: var(--white); color: var(--dark); }
+        section { padding: 4rem 2rem; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        .section-title { text-align: center; margin-bottom: 3rem; }
+        .section-title h2 { font-size: 2.3rem; color: var(--dark); margin-bottom: 0.5rem; }
+        .section-title p { color: #666; font-size: 1.1rem; }
+        .section-title::after { content: ''; display: block; width: 60px; height: 4px; background: var(--primary); margin: 1rem auto; border-radius: 2px; }
+        .basics-section { background: var(--white); }
+        .basics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start; }
+        .basics-text h3 { color: var(--primary); font-size: 1.4rem; margin-bottom: 1rem; }
+        .basics-text p { margin-bottom: 1rem; color: #555; line-height: 1.8; }
+        .feature-list { list-style: none; margin-top: 1.5rem; }
+        .feature-list li { padding: 0.6rem 0; display: flex; align-items: center; gap: 0.8rem; }
+        .feature-list li i { color: var(--accent); width: 24px; }
+        .code-block {
+            background: var(--code-bg); border-radius: 12px; overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .code-header {
+            background: #2d2d44; padding: 0.8rem 1rem; display: flex;
+            align-items: center; gap: 0.5rem; border-bottom: 1px solid #3d3d5c;
+        }
+        .code-header .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .code-header span { color: #888; font-size: 0.85rem; margin-left: 0.5rem; font-family: monospace; }
+        .code-content {
+            padding: 1.5rem; color: #d4d4d4; font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem; line-height: 1.8; overflow-x: auto;
+        }
+        .code-content .kw { color: #c586c0; }
+        .code-content .fn { color: #dcdcaa; }
+        .code-content .str { color: #ce9178; }
+        .code-content .num { color: #b5cea8; }
+        .code-content .cmt { color: #6a9955; }
+        .code-content .var { color: #9cdcfe; }
+        .code-content .obj { color: #4ec9b0; }
+        .express-section { background: var(--light); }
+        .express-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .express-card {
+            background: var(--white); border-radius: 12px; padding: 2rem;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08); transition: all 0.3s;
+            border-top: 4px solid var(--primary);
+        }
+        .express-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.12); }
+        .express-card h3 { color: var(--dark); font-size: 1.2rem; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem; }
+        .express-card h3 i { color: var(--primary); }
+        .express-card p { color: #555; font-size: 0.95rem; margin-bottom: 1rem; }
+        .mini-code {
+            background: var(--code-bg); padding: 1rem; border-radius: 8px;
+            font-family: monospace; font-size: 0.8rem; color: #d4d4d4; overflow-x: auto;
+        }
+        .files-section { background: var(--white); }
+        .files-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        .file-demo {
+            background: var(--code-bg); border-radius: 12px; padding: 1.5rem;
+            color: #d4d4d4; font-family: monospace; font-size: 0.85rem; line-height: 1.8;
+        }
+        .file-demo h4 { color: var(--accent); margin-bottom: 1rem; font-size: 1rem; }
+        .file-methods { display: flex; flex-direction: column; gap: 1rem; }
+        .method-card {
+            background: var(--white); border-radius: 10px; padding: 1.2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-left: 4px solid var(--secondary);
+        }
+        .method-card h4 { color: var(--dark); margin-bottom: 0.3rem; font-size: 1rem; }
+        .method-card p { color: #666; font-size: 0.9rem; }
+        .api-section { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: var(--white); }
+        .api-section .section-title h2, .api-section .section-title p { color: var(--white); }
+        .api-section .section-title::after { background: var(--accent); }
+        .api-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+        .api-card {
+            background: rgba(255,255,255,0.05); border-radius: 12px; padding: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s;
+        }
+        .api-card:hover { background: rgba(255,255,255,0.1); transform: translateY(-5px); }
+        .api-method {
+            display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem;
+            font-weight: bold; margin-bottom: 0.5rem;
+        }
+        .method-get { background: var(--success); color: var(--white); }
+        .method-post { background: var(--primary); color: var(--white); }
+        .method-put { background: var(--warning); color: var(--white); }
+        .method-delete { background: var(--danger); color: var(--white); }
+        .api-card h3 { color: var(--white); font-size: 1.1rem; margin-bottom: 0.5rem; }
+        .api-card p { color: #aaa; font-size: 0.9rem; }
+        .api-endpoint {
+            background: rgba(0,0,0,0.3); padding: 0.5rem 0.8rem; border-radius: 6px;
+            font-family: monospace; font-size: 0.85rem; color: var(--accent); margin-top: 0.8rem;
+        }
+        .contact-section { background: var(--light); }
+        .contact-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start; }
+        .contact-info { display: flex; flex-direction: column; gap: 1.5rem; }
+        .contact-item { display: flex; align-items: center; gap: 1rem; padding: 1.2rem; background: var(--white); border-radius: 10px; transition: transform 0.3s; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .contact-item:hover { transform: translateX(10px); }
+        .contact-item i { font-size: 1.3rem; color: var(--primary); width: 45px; height: 45px; background: var(--light); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .contact-item h4 { color: var(--dark); margin-bottom: 0.2rem; font-size: 1rem; }
+        .contact-item p { color: #666; font-size: 0.9rem; }
+        .contact-form { background: var(--white); padding: 2rem; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); }
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label { display: block; margin-bottom: 0.4rem; color: var(--dark); font-weight: 500; font-size: 0.95rem; }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%; padding: 0.7rem 1rem; border: 2px solid #e0e0e0; border-radius: 8px;
+            font-size: 0.95rem; transition: border-color 0.3s; font-family: inherit;
+        }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: var(--primary); }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+        .json-preview {
+            background: var(--code-bg); border-radius: 8px; padding: 1rem; margin-top: 1rem;
+            font-family: monospace; font-size: 0.8rem; color: #d4d4d4; min-height: 120px;
+            white-space: pre-wrap; overflow-x: auto;
+        }
+        footer { background: var(--dark); color: var(--white); padding: 2.5rem 2rem 1rem; }
+        .footer-content { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 2rem; margin-bottom: 2rem; }
+        .footer-section h3 { margin-bottom: 1rem; color: var(--accent); font-size: 1.1rem; }
+        .footer-section p, .footer-section a { color: #aaa; text-decoration: none; line-height: 2; font-size: 0.9rem; cursor: pointer; }
+        .footer-section a:hover { color: var(--accent); }
+        .footer-bottom { text-align: center; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); color: #aaa; font-size: 0.9rem; }
+        .scroll-top { position: fixed; bottom: 2rem; right: 2rem; width: 45px; height: 45px; background: var(--primary); color: var(--white); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0; transition: all 0.3s; z-index: 999; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .scroll-top.visible { opacity: 1; }
+        .scroll-top:hover { background: var(--accent); color: var(--dark); transform: translateY(-3px); }
+        .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--dark); color: var(--white); padding: 1rem 2rem; border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 3000; opacity: 0; transition: all 0.3s; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.success { background: var(--success); }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { opacity: 0; transform: translateY(30px); transition: all 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+        @media (max-width: 768px) {
+            .nav-links { display: none; position: absolute; top: 100%; left: 0; width: 100%; background: var(--dark); flex-direction: column; padding: 1rem; gap: 0.5rem; }
+            .nav-links.active { display: flex; }
+            .mobile-menu { display: block; }
+            .hero-content h1 { font-size: 2rem; }
+            .basics-grid, .files-wrapper, .contact-wrapper { grid-template-columns: 1fr; }
+            .btn-outline { margin-left: 0; margin-top: 1rem; }
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a class="logo" onclick="scrollToSection('home')"><i class="fab fa-node-js"></i> Node.js Үйрөнүү</a>
+            <ul class="nav-links" id="navLinks">
+                <li><a onclick="scrollToSection('home')" class="active" data-section="home">Башкы бет</a></li>
+                <li><a onclick="scrollToSection('basics')" data-section="basics">Негиздери</a></li>
+                <li><a onclick="scrollToSection('express')" data-section="express">Express.js</a></li>
+                <li><a onclick="scrollToSection('files')" data-section="files">Файлдар</a></li>
+                <li><a onclick="scrollToSection('api')" data-section="api">REST API</a></li>
+                <li><a onclick="scrollToSection('contact')" data-section="contact">Байланыш</a></li>
+            </ul>
+            <div class="mobile-menu" id="mobileMenu"><i class="fas fa-bars"></i></div>
+        </div>
+    </nav>
+
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <div class="hero-badge"><i class="fab fa-node-js"></i> JavaScript Runtime</div>
+            <h1><span>Node.js</span> менен бэкэнд түзүңүз</h1>
+            <p>JavaScriptти серверде иштетүүгө мүмкүнчүлүк берген күчтүү платформа.<br>Express.js, файлдар жана REST API үйрөнүңүз.</p>
+            <div class="hero-buttons">
+                <a onclick="scrollToSection('basics')" class="btn">Үйрөнүүнү баштоо</a>
+                <a onclick="scrollToSection('express')" class="btn btn-outline">Express.js</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="basics-section" id="basics">
+        <div class="container">
+            <div class="section-title fade-in">
+                <h2>Node.js Негиздери</h2>
+                <p>JavaScriptти серверде иштетүү платформасы</p>
+            </div>
+            <div class="basics-grid">
+                <div class="basics-text fade-in">
+                    <h3><i class="fab fa-node-js"></i> Node.js деген эмне?</h3>
+                    <p>Node.js — бул Chrome V8 JavaScript кыймылдаткычынын негизинде түзүлгөн, JavaScript кодун серверде иштетүүгө мүмкүнчүлүк берген ачыкулуктуу платформа.</p>
+                    <p>Бул технология асинхрондуу, окуяга негизделген архитектурага ээ. Бул маанилүү себеби, Node.js бир эле учурда көптөгөн байланыштарды тейлей алат.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-bolt"></i> Асинхрондуу иштөө (Non-blocking I/O)</li>
+                        <li><i class="fas fa-tachometer-alt"></i> Жогорку ылдамдык (V8 Engine)</li>
+                        <li><i class="fas fa-box"></i> NPM — 2 млн+ пакеттер</li>
+                        <li><i class="fas fa-code"></i> Бир тил — JavaScript</li>
+                        <li><i class="fas fa-network-wired"></i> Микросервис архитектурасы</li>
+                    </ul>
+                </div>
+                <div class="code-block fade-in">
+                    <div class="code-header">
+                        <span class="dot" style="background:#ff5f56;"></span>
+                        <span class="dot" style="background:#ffbd2e;"></span>
+                        <span class="dot" style="background:#27c93f;"></span>
+                        <span>server.js</span>
+                    </div>
+                    <div class="code-content">
+<div><span class="cmt">// http модулун кошуу</span></div>
+<div><span class="kw">const</span> <span class="var">http</span> = <span class="fn">require</span>(<span class="str">'http'</span>);</div>
+<div></div>
+<div><span class="cmt">// Сервер түзүү</span></div>
+<div><span class="kw">const</span> <span class="var">server</span> = <span class="var">http</span>.<span class="fn">createServer</span>((<span class="var">req</span>, <span class="var">res</span>) => {</div>
+<div>&nbsp;&nbsp;<span class="var">res</span>.<span class="fn">writeHead</span>(<span class="num">200</span>, { <span class="str">'Content-Type'</span>: <span class="str">'text/plain'</span> });</div>
+<div>&nbsp;&nbsp;<span class="var">res</span>.<span class="fn">end</span>(<span class="str">'Салам, Node.js!'</span>);</div>
+<div>});</div>
+<div></div>
+<div><span class="cmt">// Портто угуу</span></div>
+<div><span class="var">server</span>.<span class="fn">listen</span>(<span class="num">3000</span>, () => {</div>
+<div>&nbsp;&nbsp;<span class="var">console</span>.<span class="fn">log</span>(<span class="str">'Сервер 3000-портто иштеп жатат'</span>);</div>
+<div>});</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="express-section" id="express">
+        <div class="container">
+            <div class="section-title fade-in">
+                <h2>Express.js</h2>
+                <p>Node.js үчүн эң популярдуу веб-фреймворк</p>
+            </div>
+            <div class="express-grid">
+                <div class="express-card fade-in">
+                    <h3><i class="fas fa-rocket"></i> Орнотуу</h3>
+                    <p>Express.js орнотуу жана негизги сервер түзүү:</p>
+                    <div class="mini-code">
+<span class="kw">const</span> <span class="var">express</span> = <span class="fn">require</span>(<span class="str">'express'</span>);
+<span class="kw">const</span> <span class="var">app</span> = <span class="fn">express</span>();
+<span class="var">app</span>.<span class="fn">listen</span>(<span class="num">3000</span>);
+                    </div>
+                </div>
+                <div class="express-card fade-in">
+                    <h3><i class="fas fa-route"></i> Маршруттар</h3>
+                    <p>GET, POST жана башка HTTP методдору менен иштөө:</p>
+                    <div class="mini-code">
+<span class="var">app</span>.<span class="fn">get</span>(<span class="str">'/'</span>, (<span class="var">req</span>, <span class="var">res</span>) => {
+  <span class="var">res</span>.<span class="fn">send</span>(<span class="str">'Башкы бет'</span>);
+});
+                    </div>
+                </div>
+                <div class="express-card fade-in">
+                    <h3><i class="fas fa-middleware"></i> Middleware</h3>
+                    <p>Аралык функциялар — запросдорду иштетүү:</p>
+                    <div class="mini-code">
+<span class="var">app</span>.<span class="fn">use</span>(<span class="var">express</span>.<span class="fn">json</span>());
+<span class="var">app</span>.<span class="fn">use</span>((<span class="var">req</span>, <span class="var">res</span>, <span class="var">next</span>) => {
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="var">req</span>.<span class="var">url</span>); <span class="fn">next</span>();
+});
+                    </div>
+                </div>
+                <div class="express-card fade-in">
+                    <h3><i class="fas fa-database"></i> Шаблондор</h3>
+                    <p>EJS/Pug шаблондору менен динамикалык баракчалар:</p>
+                    <div class="mini-code">
+<span class="var">app</span>.<span class="fn">set</span>(<span class="str">'view engine'</span>, <span class="str">'ejs'</span>);
+<span class="var">app</span>.<span class="fn">get</span>(<span class="str">'/'</span>, (<span class="var">req</span>, <span class="var">res</span>) => {
+  <span class="var">res</span>.<span class="fn">render</span>(<span class="str">'index'</span>, { <span class="var">title</span>: <span class="str">'Башкы'</span> });
+});
+                    </div>
+                </div>
+                <div class="express-card fade-in">
+                    <h3><i class="fas fa-shield-alt"></i> CORS</h3>
+                    <p>Кросс-домен запросторду уруксат берүү:</p>
+                    <div class="mini-code">
+<span class="kw">const</span> <span class="var">cors</span> = <span class="fn">require</span>(<span class="str">'cors'</span>);
+<span class="var">app</span>.<span class="fn">use</span>(<span class="fn">cors</span>({
+  <span class="var">origin</span>: <span class="str">'http://localhost:3000'</span>
+}));
+                    </div>
+                </div>
+                <div class="express-card fade-in">
+                    <h3><i class="fas fa-lock"></i> Аутентификация</h3>
+                    <p>JWT токен менен колдонуучуну текшерүү:</p>
+                    <div class="mini-code">
+<span class="kw">const</span> <span class="var">jwt</span> = <span class="fn">require</span>(<span class="str">'jsonwebtoken'</span>);
+<span class="kw">const</span> <span class="var">token</span> = <span class="var">jwt</span>.<span class="fn">sign</span>(
+  { <span class="var">id</span>: <span class="var">user</span>.<span class="var">id</span> }, <span class="str">'secret'</span>
+);
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="files-section" id="files">
+        <div class="container">
+            <div class="section-title fade-in">
+                <h2>Файлдар Менен Иштөө</h2>
+                <p>fs (File System) модулу менен файлдарды окуу жана жазуу</p>
+            </div>
+            <div class="files-wrapper">
+                <div class="file-demo fade-in">
+                    <h4><i class="fas fa-file-code"></i> fs модулу мисалдары</h4>
+<div><span class="cmt">// Файлга жазуу</span></div>
+<div><span class="kw">const</span> <span class="var">fs</span> = <span class="fn">require</span>(<span class="str">'fs'</span>);</div>
+<div></div>
+<div><span class="cmt">// Синхрондуу жазуу</span></div>
+<div><span class="var">fs</span>.<span class="fn">writeFileSync</span>(</div>
+<div>&nbsp;&nbsp;<span class="str">'data.txt'</span>,</div>
+<div>&nbsp;&nbsp;<span class="str">'Салам, Node.js!'</span></div>
+<div>);</div>
+<div></div>
+<div><span class="cmt">// Асинхрондуу окуу</span></div>
+<div><span class="var">fs</span>.<span class="fn">readFile</span>(<span class="str">'data.txt'</span>, <span class="str">'utf8'</span>,</div>
+<div>&nbsp;&nbsp;(<span class="var">err</span>, <span class="var">data</span>) => {</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (<span class="var">err</span>) <span class="var">console</span>.<span class="fn">error</span>(<span class="var">err</span>);</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">else</span> <span class="var">console</span>.<span class="fn">log</span>(<span class="var">data</span>);</div>
+<div>&nbsp;&nbsp;}</div>
+<div>);</div>
+<div></div>
+<div><span class="cmt">// JSON файлга жазуу</span></div>
+<div><span class="kw">const</span> <span class="var">data</span> = { <span class="var">name</span>: <span class="str">"Айбек"</span>, <span class="var">age</span>: <span class="num">25</span> };</div>
+<div><span class="var">fs</span>.<span class="fn">writeFileSync</span>(</div>
+<div>&nbsp;&nbsp;<span class="str">'user.json'</span>,</div>
+<div>&nbsp;&nbsp;<span class="obj">JSON</span>.<span class="fn">stringify</span>(<span class="var">data</span>, <span class="kw">null</span>, <span class="num">2</span>)</div>
+<div>);</div>
+                </div>
+                <div class="file-methods fade-in">
+                    <div class="method-card">
+                        <h4><i class="fas fa-pen"></i> fs.writeFile()</h4>
+                        <p>Файлга маалымат жазуу. Эски маалыматты алмаштырат.</p>
+                    </div>
+                    <div class="method-card">
+                        <h4><i class="fas fa-book-open"></i> fs.readFile()</h4>
+                        <p>Файлдан маалымат окуу. Коллбэк же промис менен.</p>
+                    </div>
+                    <div class="method-card">
+                        <h4><i class="fas fa-plus-circle"></i> fs.appendFile()</h4>
+                        <p>Файлдын аягына маалымат кошуу. Эскини сактап калат.</p>
+                    </div>
+                    <div class="method-card">
+                        <h4><i class="fas fa-folder"></i> fs.mkdir()</h4>
+                        <p>Жаңы папка түзүү. Рекурсивдүү режимди колдонсо болот.</p>
+                    </div>
+                    <div class="method-card">
+                        <h4><i class="fas fa-trash"></i> fs.unlink()</h4>
+                        <p>Файлды өчүрүү. Кайтарылбас иш-аракет!</p>
+                    </div>
+                    <div class="method-card">
+                        <h4><i class="fas fa-stream"></i> fs.createReadStream()</h4>
+                        <p>Чоң файлдарды stream аркылуу окуу. Памятьти үнөмдөйт.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="api-section" id="api">
+        <div class="container">
+            <div class="section-title fade-in">
+                <h2>REST API</h2>
+                <p>REST архитектурасы менен API түзүү</p>
+            </div>
+            <div class="api-grid">
+                <div class="api-card fade-in">
+                    <span class="api-method method-get">GET</span>
+                    <h3>Маалымат алуу</h3>
+                    <p>Бардык колдонуучуларды же бир колдонуучуну алуу</p>
+                    <div class="api-endpoint">GET /api/users</div>
+                    <div class="api-endpoint">GET /api/users/:id</div>
+                </div>
+                <div class="api-card fade-in">
+                    <span class="api-method method-post">POST</span>
+                    <h3>Маалымат кошуу</h3>
+                    <p>Жаңы колдонуучу же ресурс түзүү</p>
+                    <div class="api-endpoint">POST /api/users</div>
+                    <div style="margin-top:0.5rem; color:#888; font-size:0.8rem;">Body: {name, email}</div>
+                </div>
+                <div class="api-card fade-in">
+                    <span class="api-method method-put">PUT</span>
+                    <h3>Маалымат жаңыртуу</h3>
+                    <p>Бардык талааларды жаңы маанилер менен алмаштыруу</p>
+                    <div class="api-endpoint">PUT /api/users/:id</div>
+                    <div style="margin-top:0.5rem; color:#888; font-size:0.8rem;">Body: {name, email, age}</div>
+                </div>
+                <div class="api-card fade-in">
+                    <span class="api-method method-delete">DELETE</span>
+                    <h3>Маалымат өчүрүү</h3>
+                    <p>Колдонуучуну же ресурсту системадан өчүрүү</p>
+                    <div class="api-endpoint">DELETE /api/users/:id</div>
+                    <div style="margin-top:0.5rem; color:#888; font-size:0.8rem;">Status: 204 No Content</div>
+                </div>
+            </div>
+            <div style="margin-top: 3rem;">
+                <div class="code-block fade-in">
+                    <div class="code-header">
+                        <span class="dot" style="background:#ff5f56;"></span>
+                        <span class="dot" style="background:#ffbd2e;"></span>
+                        <span class="dot" style="background:#27c93f;"></span>
+                        <span>api.js — Express REST API мисалы</span>
+                    </div>
+                    <div class="code-content">
+<div><span class="kw">const</span> <span class="var">express</span> = <span class="fn">require</span>(<span class="str">'express'</span>);</div>
+<div><span class="kw">const</span> <span class="var">app</span> = <span class="fn">express</span>();</div>
+<div><span class="var">app</span>.<span class="fn">use</span>(<span class="var">express</span>.<span class="fn">json</span>());</div>
+<div></div>
+<div><span class="kw">let</span> <span class="var">users</span> = [{ <span class="var">id</span>: <span class="num">1</span>, <span class="var">name</span>: <span class="str">"Айбек"</span> }];</div>
+<div></div>
+<div><span class="cmt">// Бардык колдонуучулар</span></div>
+<div><span class="var">app</span>.<span class="fn">get</span>(<span class="str">'/api/users'</span>, (<span class="var">req</span>, <span class="var">res</span>) => {</div>
+<div>&nbsp;&nbsp;<span class="var">res</span>.<span class="fn">json</span>(<span class="var">users</span>);</div>
+<div>});</div>
+<div></div>
+<div><span class="cmt">// Жаңы колдонуучу</span></div>
+<div><span class="var">app</span>.<span class="fn">post</span>(<span class="str">'/api/users'</span>, (<span class="var">req</span>, <span class="var">res</span>) => {</div>
+<div>&nbsp;&nbsp;<span class="kw">const</span> <span class="var">user</span> = { <span class="var">id</span>: <span class="obj">Date</span>.<span class="fn">now</span>(), ...<span class="var">req</span>.<span class="var">body</span> };</div>
+<div>&nbsp;&nbsp;<span class="var">users</span>.<span class="fn">push</span>(<span class="var">user</span>);</div>
+<div>&nbsp;&nbsp;<span class="var">res</span>.<span class="fn">status</span>(<span class="num">201</span>).<span class="fn">json</span>(<span class="var">user</span>);</div>
+<div>});</div>
+<div></div>
+<div><span class="var">app</span>.<span class="fn">listen</span>(<span class="num">3000</span>);</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="contact-section" id="contact">
+        <div class="container">
+            <div class="section-title fade-in">
+                <h2>Байланыш</h2>
+                <p>Суроолоруңуз барбы? Бизге жазыңыз — маалымат JSON файлга сакталат</p>
+            </div>
+            <div class="contact-wrapper">
+                <div class="contact-info fade-in">
+                    <div class="contact-item">
+                        <i class="fas fa-envelope"></i>
+                        <div><h4>Email</h4><p>nodejs-learn@example.kg</p></div>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-phone"></i>
+                        <div><h4>Телефон</h4><p>+996 700 000 000</p></div>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div><h4>Дарек</h4><p>Бишкек ш., Кыргызстан</p></div>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-clock"></i>
+                        <div><h4>Иштоо убактысы</h4><p>Дүйш-Жума: 09:00 - 18:00</p></div>
+                    </div>
+                    <div class="contact-item" style="background: var(--code-bg); color: #d4d4d4;">
+                        <i class="fas fa-database" style="color: var(--accent);"></i>
+                        <div><h4 style="color: var(--accent);">JSON Сактоо</h4><p style="color: #aaa;">Бардык билдирүүлөр JSON форматында сакталат</p></div>
+                    </div>
+                </div>
+                <div class="contact-form fade-in">
+                    <form id="contactForm" onsubmit="handleContact(event)">
+                        <div class="form-group">
+                            <label for="cname">Аты-жөнүңүз *</label>
+                            <input type="text" id="cname" name="name" required placeholder="Аты-жөнүңүздү жазыңыз">
+                        </div>
+                        <div class="form-group">
+                            <label for="cemail">Email *</label>
+                            <input type="email" id="cemail" name="email" required placeholder="email@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="cphone">Телефон</label>
+                            <input type="tel" id="cphone" name="phone" placeholder="+996 XXX XXX XXX">
+                        </div>
+                        <div class="form-group">
+                            <label for="csubject">Тема *</label>
+                            <select id="csubject" name="subject" required>
+                                <option value="">Теманы тандаңыз</option>
+                                <option value="nodejs">Node.js негиздери</option>
+                                <option value="express">Express.js</option>
+                                <option value="files">Файлдар менен иштөө</option>
+                                <option value="api">REST API</option>
+                                <option value="other">Башка суроо</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="cmessage">Билдирүү *</label>
+                            <textarea id="cmessage" name="message" required placeholder="Билдирүүңүздү жазыңыз..."></textarea>
+                        </div>
+                        <button type="submit" class="btn" style="width: 100%;">
+                            <i class="fas fa-paper-plane"></i> Жөнөтүү жана JSONга сактоо
+                        </button>
+                    </form>
+                    <div class="json-preview" id="jsonPreview" style="display: none;">
+                        <div style="color: var(--accent); margin-bottom: 0.5rem;"><i class="fas fa-file-code"></i> Сакталган JSON:</div>
+                        <div id="jsonContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3><i class="fab fa-node-js"></i> Node.js Үйрөнүү</h3>
+                <p>JavaScript бэкэнд технологиясын нөлдөн баштап үйрөнүңүз. Express.js, файлдар жана REST API.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Меню</h3>
+                <a onclick="scrollToSection('home')">Башкы бет</a><br>
+                <a onclick="scrollToSection('basics')">Негиздери</a><br>
+                <a onclick="scrollToSection('express')">Express.js</a><br>
+                <a onclick="scrollToSection('files')">Файлдар</a><br>
+                <a onclick="scrollToSection('api')">REST API</a><br>
+                <a onclick="scrollToSection('contact')">Байланыш</a>
+            </div>
+            <div class="footer-section">
+                <h3>Темалар</h3>
+                <a onclick="scrollToSection('basics')">http модулу</a><br>
+                <a onclick="scrollToSection('express')">Express фреймворк</a><br>
+                <a onclick="scrollToSection('files')">fs модулу</a><br>
+                <a onclick="scrollToSection('api')">REST API</a>
+            </div>
+            <div class="footer-section">
+                <h3>Байланыш</h3>
+                <p><i class="fas fa-envelope"></i> nodejs-learn@example.kg</p>
+                <p><i class="fas fa-phone"></i> +996 700 000 000</p>
+                <p><i class="fas fa-map-marker-alt"></i> Бишкек, Кыргызстан</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024 Node.js Үйрөнүү. Бардык укуктар корголгон.</p>
+        </div>
+    </footer>
+
+    <div class="scroll-top" id="scrollTop" onclick="scrollToTop()"><i class="fas fa-arrow-up"></i></div>
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Navigation
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) section.scrollIntoView({ behavior: 'smooth' });
+            navLinks.classList.remove('active');
+        }
+        const mobileMenu = document.getElementById('mobileMenu');
+        const navLinks = document.getElementById('navLinks');
+        mobileMenu.addEventListener('click', () => { navLinks.classList.toggle('active'); });
+        const sections = document.querySelectorAll('section[id]');
+        const navItems = document.querySelectorAll('.nav-links a');
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => { if (scrollY >= section.offsetTop - 200) current = section.getAttribute('id'); });
+            navItems.forEach(item => { item.classList.remove('active'); if (item.getAttribute('data-section') === current) item.classList.add('active'); });
+        });
+        const scrollTop = document.getElementById('scrollTop');
+        window.addEventListener('scroll', () => { if (window.scrollY > 500) scrollTop.classList.add('visible'); else scrollTop.classList.remove('visible'); });
+        function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const fadeObserver = new IntersectionObserver((entries) => { entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); }); }, { threshold: 0.1 });
+        fadeElements.forEach(el => fadeObserver.observe(el));
+
+        // Contact Form + JSON Save
+        let contactMessages = JSON.parse(localStorage.getItem('nodejs_messages') || '[]');
+
+        function handleContact(e) {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+
+            const messageData = {
+                id: Date.now(),
+                date: new Date().toISOString(),
+                name: data.name,
+                email: data.email,
+                phone: data.phone || '',
+                subject: data.subject,
+                message: data.message
+            };
+
+            // Save to localStorage (simulating server storage)
+            contactMessages.push(messageData);
+            localStorage.setItem('nodejs_messages', JSON.stringify(contactMessages, null, 2));
+
+            // Show JSON preview
+            const jsonPreview = document.getElementById('jsonPreview');
+            const jsonContent = document.getElementById('jsonContent');
+            jsonPreview.style.display = 'block';
+            jsonContent.textContent = JSON.stringify(messageData, null, 2);
+
+            // Download JSON file
+            const allData = {
+                source: "Node.js Үйрөнүү Сайты",
+                exportDate: new Date().toISOString(),
+                totalMessages: contactMessages.length,
+                messages: contactMessages
+            };
+            const jsonStr = JSON.stringify(allData, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'nodejs_contact_messages_' + new Date().toISOString().slice(0, 10) + '.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast('Билдирүү ийгиликтүү сакталды! JSON файл жүктөлдү.', 'success');
+            form.reset();
+        }
+
+        function showToast(message, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
+    </script>
+</body>
+</html>
